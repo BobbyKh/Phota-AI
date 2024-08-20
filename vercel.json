@@ -2,7 +2,7 @@
     "version": 2,
     "builds": [
         {
-            "src": "./src/wsgi.py",
+            "src": "./app",
             "use": "@vercel/python",
             "config": {
                 "runtime": "python3.10",
@@ -11,3 +11,4 @@
         }
     ]
 }
+
