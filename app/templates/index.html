@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <img class="mx-auto h-12 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600" alt="Tailwind UI">
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Welcome to Pexel AI
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        This is a very cool AI that can convert your photos to cartoon style.
+      </p>
+    </div>
+    <form id="filter-form" class="mt-8 space-y-6" action="" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="flex items-center justify-center">
+          <button type="button" class="flex items-center p-2 bg-white rounded-full shadow-sm cursor-pointer"
+                  onclick="showCamera()">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span class="ml-2">Take a photo</span>
+          </button>
+        </div>
+        <div id="camera-preview" class="hidden fixed top-0 left-0 w-full h-full z-50 bg-black bg-opacity-50 flex justify-center items-center">
+          <div class="bg-white p-4 rounded-lg shadow-lg w-1/2 h-1/2 flex justify-center items-center">
+            <video id="camera-video" class="w-full h-full" autoplay></video>
+            <button type="button" class="absolute top-0 right-0 p-4 bg-white rounded-full shadow-lg"
+                    onclick="closeCamera()">
+              <i class="fas fa-times"></i>
+            </button>
+            <button type="button" class="absolute bottom-0 left-0 p-4 bg-white rounded-full shadow-lg"
+                    onclick="capturePhoto()">
+              <i class="fas fa-camera"></i>
+            </button>
+          </div>
+        </div>
+        <script>
+          let video;
+          async function showCamera() {
+            const constraints = {
+              audio: false,
+              video: { facingMode: 'environment' }
+            };
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia(constraints);
+              video = document.querySelector("#camera-preview video");
+              video.srcObject = stream;
+              document.getElementById("camera-preview").classList.remove("hidden");
+            } catch (error) {
+              console.error(error);
+            }
+          }
+          
+          function closeCamera() {
+            const stream = video.srcObject;
+            stream.getTracks().forEach(track => track.stop());
+            document.getElementById("camera-preview").classList.add("hidden");
+          }
+          
+          async function capturePhoto() {
+            const capture = new ImageCapture(video.srcObject.getVideoTracks()[0]);
+            const photo = await capture.takePhoto();
+            const blob = new Blob([photo], { type: 'image/jpeg' });
+            const previewImage = document.getElementById('image-preview');
+            previewImage.src = URL.createObjectURL(blob);
+            document.getElementById("image").files = [blob];
+          }
+        </script>
+        <div class="rounded-md shadow-sm -space-y-px">
+          <div>
+            <label for="image" class="sr-only">Image</label>
+            <div class="mb-2">
+              <img id="image-preview" src="" class="w-full h-48 object-cover" alt="">
+            </div>
+            <input id="image" name="image" type="file" accept="image/*" class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" disabled>
+          </div>
+        </div>
+      
+        <div>
+          <label for="filter-type" class="block text-sm font-medium text-gray-700">Filter Type</label>
+          <select id="filter-type" name="filter-type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" onchange="updateFormAction()">
+            <option value="{% url 'cartoonize' %}" {% if request.path == '/cartoonize/' %}selected{% endif %}>Cartoon</option>
+            <option value="{% url 'blur' %}" {% if request.path == '/blur/' %}selected{% endif %}>Candy</option>
+            <option value="{% url 'blackwhite' %}">Black</option>
+            <option value = "{% url 'blueish' %}">Blueish</option>
+            <option value="{% url 'backgroundremover' %}">Background Remover</option>
+
+          </select>
+        </div>
+      
+        <div>
+          <label for="filter-intensity" class="block text-sm font-medium text-gray-700">Filter Intensity</label>
+          <input type="range" id="filter-intensity" name="filter-intensity" min="1" max="10" value="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+      
+        <div>
+          <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Apply Filter
+          </button>
+        </div>
+      </form>
+      
+      <script>
+        function updateFormAction() {
+          var selectElement = document.getElementById('filter-type');
+          var form = document.getElementById('filter-form');
+          form.action = selectElement.value;
+          
+          // Update button text based on selected filter
+          var button = form.querySelector('button');
+          button.textContent = 'Apply ' + selectElement.options[selectElement.selectedIndex].text;
+        }
+      </script>
+      
+  </div>
+</div>
+
+
+
+  <div class="max-w-screen-xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="pb-8 sm:max-w-lg sm:w-full sm:pb-12 sm:flex sm:flex-wrap">
+        <h1 class="text-4xl font-bold text-center sm:text-left text-gray-900">Filtered Images</h1>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+        {% for image in images %}
+          <div class="w-full max-w-sm rounded overflow-hidden shadow-lg">
+            {% if image.filtered %}
+            <div class="relative">
+              <a href="{{ image.filtered.url }}" data-fancybox="gallery" data-caption="{{ image.image.name }}">
+                <img class="w-full" src="{{ image.filtered.url }}" alt="{{ image.image.name }}">
+              </a>
+              <form action="{% url 'delete' image.id %}" method="post" class="absolute top-2 right-2">
+                {% csrf_token %}
+                <button class="bg-red-500 text-white font-bold py-2 px-4 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </form>
+            
+            </div>
+          </div>
+          {% else %}
+          <div class ="w-full max-w-sm rounded overflow-hidden shadow-lg">
+            <h1>No Filtered Image</h1>
+          </div>
+            {% endif %}
+        
+
+        
+        {% endfor %}
+
+
+      </div>
+    </div>
+  </div>
+
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="flex justify-center items-center min-h-screen bg-gradient-to-r from-indigo-900 via-purple-600 to-pink-600">
+    <div class="bg-white p-4 rounded shadow-lg w-full max-w-screen-xl">
+      <h2 class="text-3xl font-bold text-center mb-4 text-gray-800">AI Video Upscaler</h2>
+      <form action="{% url 'videoupscaler' %}" method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+        <div class="relative">
+          <input type="file" name="video" id="video" class="form-input appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+          <label for="video" class="absolute -top-2 left-2 -z-1 inline-block px-1 bg-white text-gray-500 text-sm">Select a video</label>
+        </div>
+        <div id="video-preview" class="my-2"></div>
+        <div class="text-center">
+          <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Upscale Video</button>
+        </div>
+      </form>
+
+      <div class="my-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {% for video in videos %}
+            <div class="bg-white border border-gray-200 rounded shadow p-4">
+              <h2 class="text-xl mb-4">Original Video</h2>
+              <p class="text-sm text-gray-600">Image size: {{ video.video.width }}x{{ video.video.height }}</p>
+              <p class="text-sm text-gray-600">Video size:{{videosize}}</p>
+              <video class="w-full" controls>
+                <source src="{{ video.video.url }}" type="video/mp4" />Your browser does not support the video tag.
+              </video>
+            </div>
+            <div class="bg-white border border-gray-200 rounded shadow p-4">
+              <h2 class="text-xl mb-4">Upscaled Video</h2>
+              <p class="text-sm text-gray-600">Image size: {{ video.video.width }}x{{ video.video.height }}</p>
+              <p class="text-sm text-gray-600">Video size: {{ video.upscaled_video.width }}x{{ video.upscaled_video.height }}</p>
+              
+              <video class="w-full" controls>
+                <source src="{{ video.upscaled_video.url }}" type="video/mp4" />Your browser does not support the video tag.
+              </video>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const videoInput = document.getElementById('video')
+    const videoPreview = document.getElementById('video-preview')
+    
+    videoInput.addEventListener('change', function () {
+      const file = this.files[0]
+      if (file) {
+        const video = document.createElement('video')
+        video.controls = true
+        const source = document.createElement('source')
+        source.src = URL.createObjectURL(file)
+        source.type = file.type
+        video.appendChild(source)
+        videoPreview.innerHTML = ''
+        videoPreview.appendChild(video)
+      }
+    })
+  </script>
+{% endblock %}
